@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\User;
+use Illuminate\Validation\Rule;
 
 class UsersController extends Controller
 {
@@ -14,7 +16,8 @@ class UsersController extends Controller
      */
     public function index()
     {
-        //
+        $users = User::all();
+        return view('admin.users.index', compact('users'));
     }
 
     /**
@@ -24,7 +27,7 @@ class UsersController extends Controller
      */
     public function create()
     {
-        //
+        return view('admin.users.create');
     }
 
     /**
@@ -35,7 +38,19 @@ class UsersController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $this->validate($request, [
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required',
+            'avatar' => 'nullable|image',
+
+        ]);
+
+       $user = User::add($request->all());
+       $user->uploadAvatar($request->file('avatar'));  
+       
+       return redirect()->route('users.index');
+
     }
 
     /**
@@ -57,7 +72,8 @@ class UsersController extends Controller
      */
     public function edit($id)
     {
-        //
+        $user = User::find($id);
+        return view('admin.users.edit', compact('user'));
     }
 
     /**
@@ -68,8 +84,24 @@ class UsersController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
-    {
-        //
+    {   
+        $user = User::find($id);
+
+        $this->validate($request , [
+            'name' => 'required',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users')->ignore($user->id),
+            ],
+            'avatar' => 'nullable|image'
+        ]);
+
+        $user->edit($request->all());
+        
+        $user->uploadAvatar($request->file('avatar'));
+
+        return redirect()->route('users.index');
     }
 
     /**
@@ -80,6 +112,8 @@ class UsersController extends Controller
      */
     public function destroy($id)
     {
-        //
+        User::find($id)->remove();
+
+        return redirect()->route('users.index');
     }
 }

@@ -4,7 +4,7 @@ namespace App;
 
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-
+use Illuminate\Support\Facades\Storage;
 class User extends Authenticatable
 {
     use Notifiable;
@@ -15,7 +15,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email',
     ];
 
 
@@ -38,7 +38,7 @@ class User extends Authenticatable
         return $this->hasMany(Comment::class);
     }
 
-    public static function add($field){
+    public static function add($fields){
         $user = new static;
         $user->fill($fields);
         $user->password = bcrypt($fields['password']);
@@ -49,25 +49,49 @@ class User extends Authenticatable
     }
 
     public function edit($fields){
-        $this->fill($fields);
 
-        $this->password = bcrypt($fields['password']);
-        $this->save();
+        
+         $this->fill($fields);
+         if($fields['password'] != null)
+         {
+             $this->password = bcrypt($fields['password']);
+         }
+         $this->save();
+    }
+
+    public function remove(){
+        
+        if($this->avatar != null){
+            Storage::delete('uploads/'. $this->avatar);
+        }
+        
+        $this->delete();
     }
 
     public function uploadAvatar($image){
         
-                if($image == null){
-                    return ;
-                }
-                Storage::delete('uploads/' . $this->image);
-        
-                $filename = str_random(10) . '.' . $image->extension();
-                $image->saveAs('uploads',$filename);
-                $this->image = $filename;
-                $this->save();
-            }
+        if($image == null){
+            return ;
+        }
 
+        if($this->avatar != null){
+            Storage::delete('uploads/' . $this->avatar);
+        }
+        
+
+        $filename = str_random(10) . '.' . $image->extension();
+        $image->storeAs('uploads', $filename);
+        $this->avatar = $filename;
+        $this->save();
+     }
+
+            public function getImage(){
+                if($this->avatar == null){
+                    return '/img/noimage.jpg';
+                }
+                return '/uploads/' . $this->avatar;
+            }
+            
       public function makeAdmin(){
           $this->is_admin = 1;
           $this->save();
