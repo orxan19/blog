@@ -25,6 +25,10 @@ class AppServiceProvider extends ServiceProvider
             $view->with('recentPosts', Post::orderBy('date', 'desc')->take(4)->get());
             $view->with('categories', Category::all());
         });
+
+        view()->composer('admin._sidebar', function($view){
+            $view->with('newCommentsCount', \App\Comment::where('status', 0)->count());
+        });
     }
 
     /**
